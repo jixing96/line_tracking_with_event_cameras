@@ -51,17 +51,17 @@ namespace line_event_tracker {
 
         // load transformation from body to camera
         // Notice this shoudld be in camera coordiante convention
-        R_WC.at<double>(0, 0) = 1.0;
-        R_WC.at<double>(0, 1) = 0.0;
-        R_WC.at<double>(0, 2) = 0.0;
+        R_BC.at<double>(0, 0) = 1.0;
+        R_BC.at<double>(0, 1) = 0.0;
+        R_BC.at<double>(0, 2) = 0.0;
 
-        R_WC.at<double>(1, 0) = 0.0;
-        R_WC.at<double>(1, 1) = 1.73205080757 / 2;
-        R_WC.at<double>(1, 2) = 0.5;
+        R_BC.at<double>(1, 0) = 0.0;
+        R_BC.at<double>(1, 1) = 1.73205080757 / 2;
+        R_BC.at<double>(1, 2) = 0.5;
 
-        R_WC.at<double>(2, 0) = 0.0;
-        R_WC.at<double>(2, 1) = -0.5;
-        R_WC.at<double>(2, 2) = 1.73205080757 / 2;
+        R_BC.at<double>(2, 0) = 0.0;
+        R_BC.at<double>(2, 1) = -0.5;
+        R_BC.at<double>(2, 2) = 1.73205080757 / 2;
     }
 
     Tracker::~Tracker() {
@@ -74,11 +74,11 @@ namespace line_event_tracker {
 
     cv::Mat Tracker::pixelToWorldframe(const double u, double v) {
         double pixel_point[3] = {u, v, 1.0};
-        double p_Z = 1.0;
         cv::Mat pixel = cv::Mat(3, 1, CV_64F, pixel_point);
         cv::Mat c_P = cv::Mat(3, 1, CV_64F);
-        c_P = R_WC * K_.inv() * pixel;
-        c_P = c_P / c_P.at<double>(1) * p_Z;
+        c_P = R_BC * K_.inv() * pixel;
+        //double p_Z = 1.0;
+        // c_P = c_P / c_P.at<double>(1) * p_Z;
         return c_P;
     }
 
@@ -209,8 +209,8 @@ namespace line_event_tracker {
                     for (auto const &entry : lines_) {
                         line_event_tracker_msgs::Line line;
                         line.id = entry.second.getId();
-                        line.p_pos_x = entry.second.getMidPoint()(0);
-                        line.p_pos_y = entry.second.getMidPoint()(1);
+                        line.u_l = entry.second.getMidPoint()(0);
+                        line.v_l = entry.second.getMidPoint()(1);
                         line.vel_x = entry.second.getVelocity()(0);
                         line.vel_y = entry.second.getVelocity()(1);
                         line.theta = std::atan(entry.second.getLineDirection()(0) / entry.second.getLineDirection()(1));
@@ -221,23 +221,23 @@ namespace line_event_tracker {
                         // Camera z: World x, Camera x: World y, Camera y: World z
                         double angle = 0.039;
                         double line_factor = 0.5;
-                        auto end_point_1 = cv::Point2d(line.p_pos_x + line_factor * line.length * std::sin(line.theta) / 2,
-                                                       line.p_pos_y + line_factor * line.length * std::cos(line.theta) / 2);
-                        auto end_point_2 = cv::Point2d(line.p_pos_x - line_factor * line.length * std::sin(line.theta) / 2,
-                                                       line.p_pos_y - line_factor * line.length * std::cos(line.theta) / 2);
+                        auto end_point_1 = cv::Point2d(line.u_l + line_factor * line.length * std::sin(line.theta) / 2,
+                                                       line.v_l + line_factor * line.length * std::cos(line.theta) / 2);
+                        auto end_point_2 = cv::Point2d(line.u_l - line_factor * line.length * std::sin(line.theta) / 2,
+                                                       line.v_l - line_factor * line.length * std::cos(line.theta) / 2);
 
                         end_point_1 = rotatePoint(end_point_1, angle);
                         end_point_2 = rotatePoint(end_point_2, angle);
 
-                        line.c_pos_y_end_1 = -pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
-                        line.c_pos_z_end_1 = -pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
-                        line.c_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
+                        line.B_pos_y_end_1 = -pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
+                        line.B_pos_z_end_1 = -pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
+                        line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
 
-                        line.c_pos_y_end_2 = -pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
-                        line.c_pos_z_end_2 = -pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
-                        line.c_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
+                        line.B_pos_y_end_2 = -pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
+                        line.B_pos_z_end_2 = -pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
+                        line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
 
-                        if (abs(line.c_pos_y_end_1) <= 0.2 && abs(line.c_pos_y_end_2) <= 0.2) {
+                        if (abs(line.B_pos_y_end_1) <= 0.2 && abs(line.B_pos_y_end_2) <= 0.2) {
                             lines_msg_.lines.push_back(line);
                         }
                     };

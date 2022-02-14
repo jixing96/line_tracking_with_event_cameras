@@ -207,7 +207,7 @@ namespace line_event_tracker {
         std::string distortion_model_;
         cv::Mat K_;
         cv::Mat D_;
-        cv::Mat R_WC = cv::Mat(3, 3, CV_64F);
+        cv::Mat R_BC = cv::Mat(3, 3, CV_64F);
 
         // mask
         double mask_x_upper_;
