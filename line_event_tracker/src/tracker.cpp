@@ -51,17 +51,17 @@ namespace line_event_tracker {
 
         // load transformation from body to camera
         // Notice this shoudld be in camera coordiante convention
-        R_BC.at<double>(0, 0) = 1.0;
-        R_BC.at<double>(0, 1) = 0.0;
-        R_BC.at<double>(0, 2) = 0.0;
+        R_BC.at<double>(0, 0) = 0.0;
+        R_BC.at<double>(0, 1) = -0.5;
+        R_BC.at<double>(0, 2) = 1.73205080757 / 2;
 
-        R_BC.at<double>(1, 0) = 0.0;
-        R_BC.at<double>(1, 1) = 1.73205080757 / 2;
-        R_BC.at<double>(1, 2) = 0.5;
+        R_BC.at<double>(1, 0) = -1.0;
+        R_BC.at<double>(1, 1) = 0.0;
+        R_BC.at<double>(1, 2) = 0.0;
 
         R_BC.at<double>(2, 0) = 0.0;
-        R_BC.at<double>(2, 1) = -0.5;
-        R_BC.at<double>(2, 2) = 1.73205080757 / 2;
+        R_BC.at<double>(2, 1) = -1.73205080757 / 2;
+        R_BC.at<double>(2, 2) = 0.5;
     }
 
     Tracker::~Tracker() {
@@ -229,13 +229,13 @@ namespace line_event_tracker {
                         end_point_1 = rotatePoint(end_point_1, angle);
                         end_point_2 = rotatePoint(end_point_2, angle);
 
-                        line.B_pos_y_end_1 = -pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
-                        line.B_pos_z_end_1 = -pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
-                        line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
+                        line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
+                        line.B_pos_y_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
+                        line.B_pos_z_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
 
-                        line.B_pos_y_end_2 = -pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
-                        line.B_pos_z_end_2 = -pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
-                        line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
+                        line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
+                        line.B_pos_y_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
+                        line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
 
                         if (abs(line.B_pos_y_end_1) <= 0.2 && abs(line.B_pos_y_end_2) <= 0.2) {
                             lines_msg_.lines.push_back(line);

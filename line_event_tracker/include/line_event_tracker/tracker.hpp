@@ -208,6 +208,7 @@ namespace line_event_tracker {
         cv::Mat K_;
         cv::Mat D_;
         cv::Mat R_BC = cv::Mat(3, 3, CV_64F);
+        cv::Mat C_t_BC = cv::Mat::zeros(3, 1, CV_64F);
 
         // mask
         double mask_x_upper_;
