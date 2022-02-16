@@ -61,7 +61,7 @@ namespace line_event_tracker {
 
         R_BC.at<double>(2, 0) = 0.0;
         R_BC.at<double>(2, 1) = -1.73205080757 / 2;
-        R_BC.at<double>(2, 2) = 0.5;
+        R_BC.at<double>(2, 2) = -0.5;
     }
 
     Tracker::~Tracker() {
@@ -229,13 +229,23 @@ namespace line_event_tracker {
                         end_point_1 = rotatePoint(end_point_1, angle);
                         end_point_2 = rotatePoint(end_point_2, angle);
 
-                        line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
-                        line.B_pos_y_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
-                        line.B_pos_z_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
+                        //cv::Mat XX = cv::Mat(3, 1, CV_64F);
+                        //XX = pixelToWorldframe(180.47, 125.42);
+                        //std::cout << XX << std::endl;
+                        //line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
+                        //line.B_pos_y_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
+                        //line.B_pos_z_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
 
-                        line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
-                        line.B_pos_y_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
-                        line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
+                       // line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
+                       // line.B_pos_y_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
+                       // line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
+                        line.B_pos_x_end_1 = pixelToWorldframe(180.47, 125.42).at<double>(0);
+                        line.B_pos_y_end_1 = pixelToWorldframe(180.47, 125.42).at<double>(1);
+                        line.B_pos_z_end_1 = pixelToWorldframe(180.47, 125.42).at<double>(2);
+
+                        line.B_pos_x_end_2 = pixelToWorldframe(180.47, 125.42).at<double>(0);
+                        line.B_pos_y_end_2 = pixelToWorldframe(180.47, 125.42).at<double>(1);
+                        line.B_pos_z_end_2 = pixelToWorldframe(180.47, 125.43).at<double>(2);
 
                         if (abs(line.B_pos_y_end_1) <= 0.2 && abs(line.B_pos_y_end_2) <= 0.2) {
                             lines_msg_.lines.push_back(line);
