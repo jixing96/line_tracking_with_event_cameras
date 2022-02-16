@@ -16,7 +16,8 @@
 
 namespace line_event_tracker {
 
-    Tracker::Tracker(ros::NodeHandle &nh, ros::NodeHandle &pnh) : nh_(nh), pnh_(pnh), unique_line_id_(0), unique_cluster_id_(0), write_counter_(0) {
+    Tracker::Tracker(ros::NodeHandle &nh, ros::NodeHandle &pnh) : nh_(nh), pnh_(pnh), unique_line_id_(0),
+                                                                  unique_cluster_id_(0), write_counter_(0) {
         // read params
         options_ = readTrackerOptions(pnh_);
         options_.line_options_ = readLineOptions(pnh_);
@@ -30,8 +31,10 @@ namespace line_event_tracker {
         mask_y_lower_ = double(options_.height_) / 2 - options_.mask_height_ / 2;
         mask_y_upper_ = double(options_.height_) / 2 + options_.mask_height_ / 2;
 
-        sae_ = std::vector<Eigen::MatrixXd>(2, Eigen::MatrixXd::Constant(options_.width_, options_.height_, -options_.filter_nf_max_age_));
-        sae_unasigned_ = std::vector<Eigen::MatrixXd>(2, Eigen::MatrixXd::Constant(options_.width_, options_.height_, -options_.chain_max_event_age_));
+        sae_ = std::vector<Eigen::MatrixXd>(2, Eigen::MatrixXd::Constant(options_.width_, options_.height_,
+                                                                         -options_.filter_nf_max_age_));
+        sae_unasigned_ = std::vector<Eigen::MatrixXd>(2, Eigen::MatrixXd::Constant(options_.width_, options_.height_,
+                                                                                   -options_.chain_max_event_age_));
 
         event_subscriber_ = nh_.subscribe("events", 0, &Tracker::eventsCallback, this);
 
@@ -67,7 +70,8 @@ namespace line_event_tracker {
     Tracker::~Tracker() {
 
         auto end_time_point = std::chrono::steady_clock::now();
-        auto total_time_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time_point - start_time_point_).count();
+        auto total_time_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+                end_time_point - start_time_point_).count();
         event_publisher_.shutdown();
         line_publisher_.shutdown();
     }
@@ -106,7 +110,8 @@ namespace line_event_tracker {
 
             cv::Mat events_undistorted;
             if (distortion_model_ == "equidistant") {
-                cv::fisheye::undistortPoints(events_distorted, events_undistorted, K_, D_, cv::Mat::eye(3, 3, CV_32FC1), K_);
+                cv::fisheye::undistortPoints(events_distorted, events_undistorted, K_, D_, cv::Mat::eye(3, 3, CV_32FC1),
+                                             K_);
             } else if (distortion_model_ == "radtan") {
                 cv::undistortPoints(events_distorted, events_undistorted, K_, D_, cv::Mat::eye(3, 3, CV_32FC1), K_);
             }
@@ -124,19 +129,19 @@ namespace line_event_tracker {
                 ev.t = msg->events[i].ts.toSec() * 1000;
                 ev.p = msg->events[i].polarity;
 
-                std::unique_lock<std::mutex> lock(events_mutex_);
+                std::unique_lock <std::mutex> lock(events_mutex_);
                 events_.push_back(ev);
             }
         } else {
             Event ev;
-            for (auto const &event : msg->events) {
+            for (auto const &event: msg->events) {
                 ev.x = event.x;
                 ev.y = event.y;
 
                 ev.t = event.ts.toSec() * 1000;
                 ev.p = event.polarity;
 
-                std::unique_lock<std::mutex> lock(events_mutex_);
+                std::unique_lock <std::mutex> lock(events_mutex_);
                 events_.push_back(ev);
             }
         }
@@ -170,7 +175,7 @@ namespace line_event_tracker {
 
         while (true) {
             {
-                std::unique_lock<std::mutex> lock(events_mutex_);
+                std::unique_lock <std::mutex> lock(events_mutex_);
                 if (!events_.empty()) {
                     ev = events_.front();
                     events_.pop_front();
@@ -200,13 +205,13 @@ namespace line_event_tracker {
         while (ros::ok()) {
             double t = curr_time_.load();
             {
-                std::unique_lock<std::mutex> lock_lines(lines_mutex_);
+                std::unique_lock <std::mutex> lock_lines(lines_mutex_);
                 if (!lines_.empty()) {
                     lines_msg_.header.stamp.fromSec(t / 1000);
                     lines_msg_.height = options_.height_;
                     lines_msg_.width = options_.width_;
 
-                    for (auto const &entry : lines_) {
+                    for (auto const &entry: lines_) {
                         line_event_tracker_msgs::Line line;
                         line.id = entry.second.getId();
                         line.u_l = entry.second.getMidPoint()(0);
@@ -229,27 +234,14 @@ namespace line_event_tracker {
                         end_point_1 = rotatePoint(end_point_1, angle);
                         end_point_2 = rotatePoint(end_point_2, angle);
 
-                        //cv::Mat XX = cv::Mat(3, 1, CV_64F);
-                        //XX = pixelToWorldframe(180.47, 125.42);
-                        //std::cout << XX << std::endl;
-                        //line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
-                        //line.B_pos_y_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
-                        //line.B_pos_z_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
+                        line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
+                        line.B_pos_y_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
+                        line.B_pos_z_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
 
-                       // line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
-                       // line.B_pos_y_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
-                       // line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
-                        line.B_pos_x_end_1 = pixelToWorldframe(180.47, 125.42).at<double>(0);
-                        line.B_pos_y_end_1 = pixelToWorldframe(180.47, 125.42).at<double>(1);
-                        line.B_pos_z_end_1 = pixelToWorldframe(180.47, 125.42).at<double>(2);
+                        line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
+                        line.B_pos_y_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
+                        line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
 
-                        line.B_pos_x_end_2 = pixelToWorldframe(180.47, 125.42).at<double>(0);
-                        line.B_pos_y_end_2 = pixelToWorldframe(180.47, 125.42).at<double>(1);
-                        line.B_pos_z_end_2 = pixelToWorldframe(180.47, 125.43).at<double>(2);
-
-                        if (abs(line.B_pos_y_end_1) <= 0.2 && abs(line.B_pos_y_end_2) <= 0.2) {
-                            lines_msg_.lines.push_back(line);
-                        }
                     };
                     line_publisher_.publish(lines_msg_);
                     lines_msg_.lines.clear();
@@ -258,13 +250,13 @@ namespace line_event_tracker {
 
             if (options_.write_for_visualization_) {
                 {
-                    std::unique_lock<std::mutex> lock_lines(lines_mutex_);
+                    std::unique_lock <std::mutex> lock_lines(lines_mutex_);
                     writeLines(t);
                     writeLineEvents();
                 }
 
                 {
-                    std::unique_lock<std::mutex> lock_clusters(clusters_mutex_);
+                    std::unique_lock <std::mutex> lock_clusters(clusters_mutex_);
                     writeClusters(t);
                     writeClusterEvents();
                 }
@@ -277,25 +269,25 @@ namespace line_event_tracker {
     }
 
     inline void Tracker::periodicalCheckLines(double t) {
-        std::unique_lock<std::mutex> lock(lines_mutex_);
+        std::unique_lock <std::mutex> lock(lines_mutex_);
 
         if (!lines_.empty()) {
             std::vector<int> line_ids_to_delete;
 
-            for (auto &kv : lines_) {
+            for (auto &kv: lines_) {
                 if (!kv.second.periodicalCheck(t) || lineOutOfFrame(kv.second)) {
                     line_ids_to_delete.push_back(kv.first);
                 }
             }
 
-            for (auto const line_id : line_ids_to_delete) {
+            for (auto const line_id: line_ids_to_delete) {
                 lines_.erase(line_id);
             }
 
             // merge lines
-            std::vector<std::vector<int>> lines_to_be_merged;
+            std::vector <std::vector<int>> lines_to_be_merged;
 
-            for (auto &line_entry : lines_) {
+            for (auto &line_entry: lines_) {
                 auto it = lines_.find(line_entry.first);
                 ++it;
                 if (it == lines_.end()) break;
@@ -338,7 +330,8 @@ namespace line_event_tracker {
         double distance_to_line = std::min(distance_curr_to_other, distance_other_to_curr);
 
         double distance_mid_points = (curr_line.getMidPoint() - other_line.getMidPoint()).norm();
-        double distance_mid_points_threshold = options_.line_options_.merge_dist_mult_ * (curr_line.getLength() + other_line.getLength()) / 2;
+        double distance_mid_points_threshold =
+                options_.line_options_.merge_dist_mult_ * (curr_line.getLength() + other_line.getLength()) / 2;
 
         if (angle_diff < options_.line_options_.merge_angle_diff_ &&
             distance_to_line < options_.line_options_.merge_dist_threshold_ &&
@@ -351,18 +344,18 @@ namespace line_event_tracker {
 
     inline void Tracker::periodicalCheckClusters(double t) {
 
-        std::unique_lock<std::mutex> lock(clusters_mutex_);
+        std::unique_lock <std::mutex> lock(clusters_mutex_);
 
         if (!clusters_.empty()) {
             std::vector<int> cluster_ids_to_delete;
 
-            for (auto &kv : clusters_) {
+            for (auto &kv: clusters_) {
                 if (!kv.second.periodicalCheck(t)) {
                     cluster_ids_to_delete.push_back(kv.first);
                 }
             }
 
-            for (auto const cluster_id : cluster_ids_to_delete) {
+            for (auto const cluster_id: cluster_ids_to_delete) {
                 clusters_.erase(cluster_id);
             }
         }
@@ -376,17 +369,22 @@ namespace line_event_tracker {
         sae_[ev.p](ev.x, ev.y) = ev.t;
 
         // refactory filter
-        if (ev.t - last_timestamp < options_.filter_rf_period_same_pol_ || ev.t - last_timestamp_opp < options_.filter_rf_period_opp_pol_) {
+        if (ev.t - last_timestamp < options_.filter_rf_period_same_pol_ ||
+            ev.t - last_timestamp_opp < options_.filter_rf_period_opp_pol_) {
             return false;
         }
 
         int x_left_bound = (ev.x - options_.filter_nf_offset_ < 0) ? 0 : ev.x - options_.filter_nf_offset_;
-        int x_right_bound = (ev.x + options_.filter_nf_offset_ > options_.width_ - 1) ? options_.width_ - 1 : ev.x + options_.filter_nf_offset_;
+        int x_right_bound = (ev.x + options_.filter_nf_offset_ > options_.width_ - 1) ? options_.width_ - 1 : ev.x +
+                                                                                                              options_.filter_nf_offset_;
         int y_upper_bound = (ev.y - options_.filter_nf_offset_ < 0) ? 0 : ev.y - options_.filter_nf_offset_;
-        int y_lower_bound = (ev.y + options_.filter_nf_offset_ > options_.height_ - 1) ? options_.height_ - 1 : ev.y + options_.filter_nf_offset_;
+        int y_lower_bound = (ev.y + options_.filter_nf_offset_ > options_.height_ - 1) ? options_.height_ - 1 : ev.y +
+                                                                                                                options_.filter_nf_offset_;
 
-        auto window = sae_[ev.p].block(x_left_bound, y_upper_bound, x_right_bound - x_left_bound + 1, y_lower_bound - y_upper_bound + 1);
-        int num_events = ((Eigen::MatrixXd::Constant(window.rows(), window.cols(), ev.t) - window).array() < options_.filter_nf_max_age_).count();
+        auto window = sae_[ev.p].block(x_left_bound, y_upper_bound, x_right_bound - x_left_bound + 1,
+                                       y_lower_bound - y_upper_bound + 1);
+        int num_events = ((Eigen::MatrixXd::Constant(window.rows(), window.cols(), ev.t) - window).array() <
+                          options_.filter_nf_max_age_).count();
 
         // neighbourhood filter
         if (num_events < options_.filter_nf_min_num_events_) {
@@ -403,8 +401,8 @@ namespace line_event_tracker {
         Line *line_candidate;
         int close_lines_counter = 0;
 
-        std::unique_lock<std::mutex> lock(lines_mutex_);
-        for (auto &kv : lines_) {
+        std::unique_lock <std::mutex> lock(lines_mutex_);
+        for (auto &kv: lines_) {
             auto &line = kv.second;
             line.update(ev.t);
 
@@ -433,9 +431,9 @@ namespace line_event_tracker {
 
         std::vector<long> cluster_ids_close;
 
-        std::unique_lock<std::mutex> lock(clusters_mutex_);
+        std::unique_lock <std::mutex> lock(clusters_mutex_);
 
-        for (auto const &kv : clusters_) {
+        for (auto const &kv: clusters_) {
             auto &cluster = kv.second;
             double distance_line = cluster.getDistanceToInferredLine(point);
             double distance_midpoint = (point - cluster.getCOG()).norm();
@@ -465,11 +463,11 @@ namespace line_event_tracker {
             // try promoting cluster
             long curr_line_id = unique_line_id_;
 
-            std::unique_lock<std::mutex> lock_lines(lines_mutex_);
+            std::unique_lock <std::mutex> lock_lines(lines_mutex_);
             if (tryPromotingCluster(cluster_ids_close[0], ev.t)) {
                 // try merging with existing line
                 auto &curr_line = lines_.at(curr_line_id);
-                for (auto &kv : lines_) {
+                for (auto &kv: lines_) {
                     if (kv.first == curr_line_id) continue;
                     if (tryMergingLines(curr_line, kv.second)) {
                         kv.second.mergeLines(curr_line);
@@ -496,7 +494,7 @@ namespace line_event_tracker {
             cog(1) = cluster.getCOG()(1);
             cog(2) = 0;
 
-            for (auto const &ev : cluster.getEvents()) {
+            for (auto const &ev: cluster.getEvents()) {
                 cog(2) += ev.t;
             }
 
@@ -513,13 +511,16 @@ namespace line_event_tracker {
             line_dir << normal(1), -normal(0);
             line_dir.normalize();
 
-            double std_dev_line = eig_vecs.col(1).head<2>().norm() * eig_vals(1) + eig_vecs.col(2).head<2>().norm() * eig_vals(2);
+            double std_dev_line =
+                    eig_vecs.col(1).head<2>().norm() * eig_vals(1) + eig_vecs.col(2).head<2>().norm() * eig_vals(2);
             double length = sqrt(12 * std_dev_line);
 
             if (eig_vals[0] < options_.line_options_.prom_threshold_ &&
                 length > options_.line_options_.del_min_length_) {
 
-                lines_.insert(lines_.end(), std::make_pair(unique_line_id_, Line(cluster.getEvents(), normal, eig_vals, eig_vecs, cog, length, options_.line_options_, t, -1)));
+                lines_.insert(lines_.end(), std::make_pair(unique_line_id_,
+                                                           Line(cluster.getEvents(), normal, eig_vals, eig_vecs, cog,
+                                                                length, options_.line_options_, t, -1)));
                 ++unique_line_id_;
 
                 clusters_.erase(cluster_id);
@@ -541,7 +542,7 @@ namespace line_event_tracker {
         curr_x = ev.x;
         curr_y = ev.y;
 
-        std::deque<Event> chain;
+        std::deque <Event> chain;
         chain.push_front(ev);
 
         Eigen::MatrixXd::Index maxRow, maxCol;
@@ -549,7 +550,8 @@ namespace line_event_tracker {
         double max_time_stamp;
 
         // ignore events on boarder
-        bool on_boarder = (curr_x == 0 || curr_x == options_.width_ - 1 || curr_y == 0 || curr_y == options_.height_ - 1);
+        bool on_boarder = (curr_x == 0 || curr_x == options_.width_ - 1 || curr_y == 0 ||
+                           curr_y == options_.height_ - 1);
         if (on_boarder) {
             sae_unasigned_[ev.p](ev.x, ev.y) = ev.t;
             return false;
@@ -563,7 +565,8 @@ namespace line_event_tracker {
             int y_lower = curr_y + 1;
 
             // out of frame for a 5x5 neighbourhood
-            bool out_of_frame = (x_left <= 1 || x_right >= options_.width_ - 2 || y_upper <= 1 || y_lower >= options_.height_ - 2);
+            bool out_of_frame = (x_left <= 1 || x_right >= options_.width_ - 2 || y_upper <= 1 ||
+                                 y_lower >= options_.height_ - 2);
             if (out_of_frame) break;
 
             if (i == 0) {
@@ -572,7 +575,7 @@ namespace line_event_tracker {
             } else {
                 max_time_stamp = -options_.chain_max_event_age_;
 
-                for (auto const &pos : Chain::chain_search.at({maxRow, maxCol})) {
+                for (auto const &pos: Chain::chain_search.at({maxRow, maxCol})) {
                     double curr_t = sae_unasigned_[ev.p](x_left + pos.first, y_upper + pos.second);
 
                     if (max_time_stamp < curr_t) {
@@ -593,7 +596,7 @@ namespace line_event_tracker {
                 x_left = x_left - 1 + maxRow;
                 y_upper = y_upper - 1 + maxCol;
 
-                for (auto const &pos : Chain::chain_search.at({maxRow, maxCol})) {
+                for (auto const &pos: Chain::chain_search.at({maxRow, maxCol})) {
 
                     double curr_t = sae_unasigned_[ev.p](x_left + pos.first, y_upper + pos.second);
 
@@ -619,14 +622,14 @@ namespace line_event_tracker {
         if (chain.size() > options_.cluster_options_.creation_num_events) {
 
             // remove events from sae
-            for (auto const &event : chain) {
+            for (auto const &event: chain) {
                 sae_unasigned_[ev.p].block(event.x - 1, event.y - 1, 3, 3).setConstant(-options_.chain_max_event_age_);
             }
 
             Eigen::Vector2d cog;
             cog.setZero();
 
-            for (auto const &chain_ev : chain) {
+            for (auto const &chain_ev: chain) {
                 cog(0) += chain_ev.x;
                 cog(1) += chain_ev.y;
             }
@@ -643,7 +646,7 @@ namespace line_event_tracker {
 
             // calculate distance to inferred line
             bool is_line = true;
-            for (auto const &event : chain) {
+            for (auto const &event: chain) {
                 double distance_to_line = abs((event.x - cog(0)) * normal(0) + (event.y - cog(1)) * normal(1));
 
                 if (distance_to_line > options_.chain_add_distance_threshold_) {
@@ -653,8 +656,10 @@ namespace line_event_tracker {
             }
 
             if (is_line) {
-                std::unique_lock<std::mutex> lock(clusters_mutex_);
-                clusters_.insert(clusters_.end(), std::make_pair(unique_cluster_id_, Cluster(chain, normal, cog, options_.cluster_options_, ev.t)));
+                std::unique_lock <std::mutex> lock(clusters_mutex_);
+                clusters_.insert(clusters_.end(), std::make_pair(unique_cluster_id_,
+                                                                 Cluster(chain, normal, cog, options_.cluster_options_,
+                                                                         ev.t)));
                 ++unique_cluster_id_;
                 return true;
             } else {
@@ -669,7 +674,7 @@ namespace line_event_tracker {
 
 
     inline void Tracker::PCA2D(Eigen::Matrix<double, 2, 2> &eig_vecs, Eigen::Vector2d &eig_vals, Eigen::Vector2d &cog,
-                               std::deque<Event> &events) {
+                               std::deque <Event> &events) {
         double xx_var = 0;
         double xy_var = 0;
         double yy_var = 0;
@@ -677,7 +682,7 @@ namespace line_event_tracker {
         double x_dif;
         double y_dif;
 
-        for (auto const &ev : events) {
+        for (auto const &ev: events) {
             x_dif = ev.x - cog(0);
             y_dif = ev.y - cog(1);
 
@@ -693,14 +698,14 @@ namespace line_event_tracker {
         cov(1, 1) = yy_var;
         cov /= events.size();
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, 2, 2>> eig_sol(cov);
+        Eigen::SelfAdjointEigenSolver <Eigen::Matrix<double, 2, 2>> eig_sol(cov);
 
         eig_vecs = eig_sol.eigenvectors();
         eig_vals = eig_sol.eigenvalues();
     }
 
     inline void Tracker::PCA3D(Eigen::Matrix<double, 3, 3> &eig_vecs, Eigen::Vector3d &eig_vals, Eigen::Vector3d &cog,
-                               std::deque<Event> &events) {
+                               std::deque <Event> &events) {
         double xx_var = 0;
         double xy_var = 0;
         double xt_var = 0;
@@ -713,7 +718,7 @@ namespace line_event_tracker {
         double t_dif;
 
 
-        for (auto const &ev : events) {
+        for (auto const &ev: events) {
             x_dif = ev.x - cog(0);
             y_dif = ev.y - cog(1);
             t_dif = ev.t - cog(2);
@@ -738,7 +743,7 @@ namespace line_event_tracker {
         cov(2, 2) = tt_var;
         cov /= events.size();
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, 3, 3>> eig_sol(cov);
+        Eigen::SelfAdjointEigenSolver <Eigen::Matrix<double, 3, 3>> eig_sol(cov);
         eig_vals = eig_sol.eigenvalues();
         eig_vecs = eig_sol.eigenvectors();
     }
@@ -772,11 +777,11 @@ namespace line_event_tracker {
     }
 
 
-    void Tracker::writeChain(std::deque<Event> &chain) {
+    void Tracker::writeChain(std::deque <Event> &chain) {
 
         std::ofstream chain_file(debug_dir_ + "chain.txt", std::ofstream::trunc);
 
-        for (auto const &ev : chain) {
+        for (auto const &ev: chain) {
             chain_file << ev.t << " " << ev.x << " " << ev.y << " " << ev.p << "\n";
         }
 
@@ -787,7 +792,7 @@ namespace line_event_tracker {
         std::ofstream cluster_file(debug_dir_ + "cluster.txt", std::ofstream::trunc);
         auto &cluster = clusters_.at(cluster_id);
 
-        for (auto const &ev : cluster.getEvents()) {
+        for (auto const &ev: cluster.getEvents()) {
             cluster_file << ev.t << " " << ev.x << " " << ev.y << " " << ev.p << "\n";
         }
 
@@ -797,10 +802,10 @@ namespace line_event_tracker {
     void Tracker::writeAllClusters() {
         std::ofstream cluster_file(debug_dir_ + "cluster.txt", std::ofstream::trunc);
 
-        for (auto const &entry : clusters_) {
+        for (auto const &entry: clusters_) {
             auto &cluster = entry.second;
 
-            for (auto const &ev : cluster.getEvents()) {
+            for (auto const &ev: cluster.getEvents()) {
                 cluster_file << ev.t << " " << ev.x << " " << ev.y << " " << ev.p << "\n";
             }
         }
@@ -817,10 +822,11 @@ namespace line_event_tracker {
         auto end_point_1 = line.getMidPoint() + line.getLineDirection() * line.getLength() / 2;
         auto end_point_2 = line.getMidPoint() - line.getLineDirection() * line.getLength() / 2;
 
-        line_file << line_id << " " << end_point_1(0) << " " << end_point_1(1) << " " << end_point_2(0) << " " << end_point_2(1) << " " << line.getEvents().front().t << " " << line.getState() << "\n";
+        line_file << line_id << " " << end_point_1(0) << " " << end_point_1(1) << " " << end_point_2(0) << " "
+                  << end_point_2(1) << " " << line.getEvents().front().t << " " << line.getState() << "\n";
 
         // events
-        for (auto const &ev : line.getEvents()) {
+        for (auto const &ev: line.getEvents()) {
             line_events_file << ev.t << " " << ev.x << " " << ev.y << " " << ev.p << "\n";
         }
 
@@ -832,16 +838,17 @@ namespace line_event_tracker {
         std::ofstream lines_file(debug_dir_ + "lines.txt", std::ofstream::trunc);
         std::ofstream lines_events_file(debug_dir_ + "lines_events.txt", std::ofstream::trunc);
 
-        for (auto const &entry : lines_) {
+        for (auto const &entry: lines_) {
             auto &line = entry.second;
 
             auto end_point_1 = line.getMidPoint() + line.getLineDirection() * line.getLength() / 2;
             auto end_point_2 = line.getMidPoint() - line.getLineDirection() * line.getLength() / 2;
 
-            lines_file << entry.first << " " << end_point_1(0) << " " << end_point_1(1) << " " << end_point_2(0) << " " << end_point_2(1) << " " << line.getEvents().front().t << " " << line.getState() << "\n";
+            lines_file << entry.first << " " << end_point_1(0) << " " << end_point_1(1) << " " << end_point_2(0) << " "
+                       << end_point_2(1) << " " << line.getEvents().front().t << " " << line.getState() << "\n";
 
             // events
-            for (auto const &ev : line.getEvents()) {
+            for (auto const &ev: line.getEvents()) {
                 lines_events_file << ev.t << " " << ev.x << " " << ev.y << " " << ev.p << "\n";
             }
         }
@@ -861,13 +868,19 @@ namespace line_event_tracker {
 
         std::string lines;
         double curr_time = curr_time_.load();
-        for (auto const &l : lines_) {
+        for (auto const &l: lines_) {
             auto &line = l.second;
-            lines.append(std::to_string(write_counter_) + " " + std::to_string(t) + " " + std::to_string(line.getState()) + " " +
-                         std::to_string(line.getNormal()(0)) + " " + std::to_string(line.getNormal()(1)) + " " + std::to_string(line.getNormal()(2)) + " " +
-                         std::to_string(line.getCOG()(0)) + " " + std::to_string(line.getCOG()(1)) + " " + std::to_string(line.getCOG()(2)) + " " +
-                         std::to_string((line.getMidPoint()(0))) + " " + std::to_string((line.getMidPoint()(1))) + " " + std::to_string((line.getLength())) + " " +
-                         std::to_string(std::atan(line.getLineDirection()(0) / line.getLineDirection()(1))) + " " + std::to_string(line.getId()) + "\n");
+            lines.append(
+                    std::to_string(write_counter_) + " " + std::to_string(t) + " " + std::to_string(line.getState()) +
+                    " " +
+                    std::to_string(line.getNormal()(0)) + " " + std::to_string(line.getNormal()(1)) + " " +
+                    std::to_string(line.getNormal()(2)) + " " +
+                    std::to_string(line.getCOG()(0)) + " " + std::to_string(line.getCOG()(1)) + " " +
+                    std::to_string(line.getCOG()(2)) + " " +
+                    std::to_string((line.getMidPoint()(0))) + " " + std::to_string((line.getMidPoint()(1))) + " " +
+                    std::to_string((line.getLength())) + " " +
+                    std::to_string(std::atan(line.getLineDirection()(0) / line.getLineDirection()(1))) + " " +
+                    std::to_string(line.getId()) + "\n");
         }
 
         lines_file << lines;
@@ -885,10 +898,12 @@ namespace line_event_tracker {
         }
 
         // write line events
-        for (auto const &l : lines_) {
-            for (auto const &e : l.second.getEvents()) {
-                events.append(std::to_string(write_counter_) + " " + std::to_string(e.t) + " " + std::to_string(e.x) + " " + std::to_string(e.y) + " " +
-                              std::to_string(e.p) + " " + "0" + " " + std::to_string(l.second.getId()) + "\n");
+        for (auto const &l: lines_) {
+            for (auto const &e: l.second.getEvents()) {
+                events.append(
+                        std::to_string(write_counter_) + " " + std::to_string(e.t) + " " + std::to_string(e.x) + " " +
+                        std::to_string(e.y) + " " +
+                        std::to_string(e.p) + " " + "0" + " " + std::to_string(l.second.getId()) + "\n");
             }
         }
 
@@ -907,10 +922,12 @@ namespace line_event_tracker {
         }
 
         // write cluster events
-        for (auto const &c : clusters_) {
-            for (auto const &e : c.second.getEvents()) {
-                events.append(std::to_string(write_counter_) + " " + std::to_string(e.t) + " " + std::to_string(e.x) + " " +
-                              std::to_string(e.y) + " " + std::to_string(e.p) + " " + "1" + " " + std::to_string(c.first) + "\n");
+        for (auto const &c: clusters_) {
+            for (auto const &e: c.second.getEvents()) {
+                events.append(
+                        std::to_string(write_counter_) + " " + std::to_string(e.t) + " " + std::to_string(e.x) + " " +
+                        std::to_string(e.y) + " " + std::to_string(e.p) + " " + "1" + " " + std::to_string(c.first) +
+                        "\n");
             }
         }
 
@@ -929,11 +946,13 @@ namespace line_event_tracker {
 
         std::string clusters;
         double curr_time = curr_time_.load();
-        for (auto const &c : clusters_) {
+        for (auto const &c: clusters_) {
             auto &cluster = c.second;
             clusters.append(std::to_string(write_counter_) + " " + std::to_string(t) + " " +
-                            std::to_string(cluster.getNormal()(0)) + " " + std::to_string(cluster.getNormal()(1)) + " " +
-                            std::to_string(cluster.getCOG()(0)) + " " + std::to_string(cluster.getCOG()(1)) + " " + "\n");
+                            std::to_string(cluster.getNormal()(0)) + " " + std::to_string(cluster.getNormal()(1)) +
+                            " " +
+                            std::to_string(cluster.getCOG()(0)) + " " + std::to_string(cluster.getCOG()(1)) + " " +
+                            "\n");
         }
 
         clusters_file << clusters;
