@@ -234,13 +234,14 @@ namespace line_event_tracker {
                         end_point_1 = rotatePoint(end_point_1, angle);
                         end_point_2 = rotatePoint(end_point_2, angle);
 
-                        line.B_pos_x_end_1 = pixelToWorldframe(179.05, 125.44).at<double>(0);
-                        line.B_pos_y_end_1 = pixelToWorldframe(179.05, 125.44).at<double>(1);
-                        line.B_pos_z_end_1 = pixelToWorldframe(179.05, 125.44).at<double>(2);
+                        line.B_pos_x_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(0);
+                        line.B_pos_y_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(1);
+                        line.B_pos_z_end_1 = pixelToWorldframe(end_point_1.x, end_point_1.y).at<double>(2);
 
-                        line.B_pos_x_end_2 = pixelToWorldframe(179.05, 125.44).at<double>(0);
-                        line.B_pos_y_end_2 = pixelToWorldframe(179.05, 125.44).at<double>(1);
-                        line.B_pos_z_end_2 = pixelToWorldframe(179.05, 125.44).at<double>(2);
+                        line.B_pos_x_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(0);
+                        line.B_pos_y_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(1);
+                        line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
+
                         lines_msg_.lines.push_back(line);
 
                     };

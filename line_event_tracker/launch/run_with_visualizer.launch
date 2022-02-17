@@ -1,5 +1,5 @@
 <launch>
-    <include file="$(find line_event_tracker)/launch/run.launch"/>
-<!--     <include file="$(find line_event_tracker)/launch/run_with_renderer.launch"/> -->
+<!--     <include file="$(find line_event_tracker)/launch/run.launch"/> -->
+    <include file="$(find line_event_tracker)/launch/run_with_renderer.launch"/>
     <include file="$(find line_event_tracker_visualizer)/launch/run.launch" />
 </launch>
