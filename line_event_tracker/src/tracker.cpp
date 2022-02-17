@@ -243,7 +243,7 @@ namespace line_event_tracker {
                         line.B_pos_z_end_2 = pixelToWorldframe(end_point_2.x, end_point_2.y).at<double>(2);
 
                         if (abs(line.B_pos_y_end_1) <= 0.3 && abs(line.B_pos_y_end_2) <= 0.3) {
-                            lines_msg_.lines.push_back(temp_line);
+                            lines_msg_.lines.push_back(line);
                         }
 
                     };
